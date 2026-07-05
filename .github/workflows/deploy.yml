@@ -73,19 +73,11 @@ jobs:
       - name: Construir SITE_URL
         id: site
         run: |
-          REPO="${{ github.repository }}"
-          OWNER="${REPO%/*}"
-          REPO_NAME="${REPO#*/}"
           if [ -n "${{ vars.SITE_URL }}" ]; then
-            URL="${{ vars.SITE_URL }}"
-          else
-            URL="https://${OWNER}.github.io/${REPO_NAME}"
+            echo "url=${{ vars.SITE_URL }}" >> $GITHUB_OUTPUT
           fi
-          echo "url=${URL}" >> $GITHUB_OUTPUT
           if [ -n "${{ vars.CNAME }}" ]; then
             echo "cname=${{ vars.CNAME }}" >> $GITHUB_OUTPUT
-          else
-            echo "cname=" >> $GITHUB_OUTPUT
           fi
 
       - run: npm run build

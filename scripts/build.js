@@ -399,6 +399,36 @@ function renderFooter() {
 }
 
 /* ═══════════════════════════════════════════════
+   Post-build validation: reject /blog/ in output
+   Only runs when BASE_URL is empty (custom domain)
+   ═══════════════════════════════════════════════ */
+function validateNoBlogPrefix() {
+  if (BASE_URL) return 0;
+  let errors = 0;
+  const textFiles = [];
+  function walk(dir) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (/\.(html|js|css|json|xml)$/i.test(e.name)) textFiles.push(full);
+    }
+  }
+  walk(PUBLIC_DIR);
+  for (const file of textFiles) {
+    const content = fs.readFileSync(file, 'utf-8');
+    const lines = content.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const idx = lines[i].indexOf('/blog/');
+      if (idx !== -1) {
+        console.error(`  ❌ /blog/ en ${path.relative(PUBLIC_DIR, file)}:${i + 1}:${idx + 1}`);
+        errors++;
+      }
+    }
+  }
+  return errors;
+}
+
+/* ═══════════════════════════════════════════════
    HTML validation (verify all paths resolve)
    ═══════════════════════════════════════════════ */
 function resolveHref(href, htmlFile) {
@@ -940,6 +970,20 @@ ${renderHead('Sin conexión - ' + SITE_NAME, 'Sin conexión a Internet', '/offli
   }
 
   console.log(`  ✅ Todos los enlaces verificados (0 errores)`);
+
+  // ══════════════════════════════════════════
+  //  VALIDATION 3: /blog/ prefix (custom domain)
+  // ══════════════════════════════════════════
+  console.log('\n  Validando prefijo /blog/ en archivos generados...\n');
+
+  const blogErrors = validateNoBlogPrefix();
+
+  if (blogErrors > 0) {
+    console.error(`\n❌ ${blogErrors} ocurrencia(s) de /blog/ encontradas. Build fallido.`);
+    process.exit(1);
+  }
+
+  console.log(`  ✅ Sin prefijo /blog/ en archivos generados`);
 
   // ══════════════════════════════════════════
   //  Summary
