@@ -28,7 +28,7 @@ if (RAW_BASE_URL !== undefined) {
   BASE_URL = '/blog';
 }
 
-SITE_URL = RAW_SITE_URL || 'https://fershouno.github.io/blog';
+SITE_URL = RAW_SITE_URL || 'https://blog.fershouno.me/';
 
 // Normalize: ensure BASE_URL has no trailing slash
 if (BASE_URL.length > 1 && BASE_URL.endsWith('/')) BASE_URL = BASE_URL.slice(0, -1);
