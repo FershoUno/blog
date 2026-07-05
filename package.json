@@ -4,12 +4,7 @@
   "private": true,
   "description": "Plataforma de microblogging estática sobre Debian, GNU/Linux y Software Libre",
   "scripts": {
-    "build": "node scripts/build.js",
-    "generate:feed": "node scripts/generate-feed.js",
-    "generate:search": "node scripts/generate-search.js",
-    "generate:sitemap": "node scripts/generate-sitemap.js",
-    "generate:id": "node scripts/generate-post-id.js",
-    "optimize:images": "node scripts/optimize-images.js"
+    "build": "node scripts/build.js"
   },
   "dependencies": {
     "fs-extra": "^11.2.0",

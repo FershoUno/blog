@@ -1,6 +1,9 @@
 (function () {
   'use strict';
 
+  var BASE = window.__BASE_URL || '';
+  var CHECK_INTERVAL = 60000;
+
   /* ==========================================
      Mobile menu toggle
      ========================================== */
@@ -56,24 +59,25 @@
   }
 
   /* ==========================================
-     Active nav link
+     Active nav link (based on path)
      ========================================== */
   function initActiveNav() {
-    var path = window.location.pathname;
+    var path = window.location.pathname.replace(BASE, '') || '/';
     document.querySelectorAll('[data-nav]').forEach(function (el) {
-      if (path === '/blog/' || path === '/blog') {
-        el.classList.toggle('active', el.dataset.nav === 'home');
+      var href = el.getAttribute('href').replace(BASE, '');
+      el.classList.toggle('active', href === path);
+      if (path === '/' || path === '') {
+        el.classList.toggle('active', href === '/');
       }
     });
   }
 
   /* ==========================================
-     PWA: Service Worker Registration
+     PWA: Service Worker
      ========================================== */
   function initSW() {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/blog/sw.js').then(function (reg) {
-        console.log('[PWA] SW registrado');
+      navigator.serviceWorker.register(BASE + '/sw.js').then(function (reg) {
 
         reg.addEventListener('updatefound', function () {
           var installing = reg.installing;
@@ -85,13 +89,7 @@
             }
           });
         });
-      }).catch(function (err) {
-        console.warn('[PWA] Error registrando SW:', err);
-      });
-
-      navigator.serviceWorker.addEventListener('controllerchange', function () {
-        console.log('[PWA] Nuevo SW activo');
-      });
+      }).catch(function () {});
     }
   }
 
@@ -113,7 +111,7 @@
       if (reg.waiting) {
         reg.waiting.postMessage({ type: 'SKIP_WAITING' });
       }
-      banner.remove();
+      window.location.reload();
     });
 
     banner.querySelector('.update-close').addEventListener('click', function () {
@@ -124,18 +122,16 @@
   /* ==========================================
      PWA: Periodic version check (Mode 1)
      ========================================== */
-  var CHECK_INTERVAL = 60000;
-
   function initVersionCheck() {
     var currentVersion = null;
 
-    fetch('/blog/version.json?_=' + Date.now())
+    fetch(BASE + '/version.json?_=' + Date.now())
       .then(function (r) { return r.json(); })
       .then(function (data) { currentVersion = data.version; })
       .catch(function () {});
 
     setInterval(function () {
-      fetch('/blog/version.json?_=' + Date.now())
+      fetch(BASE + '/version.json?_=' + Date.now())
         .then(function (r) { return r.json(); })
         .then(function (data) {
           if (currentVersion && data.version !== currentVersion) {
@@ -150,8 +146,7 @@
   }
 
   function showContentUpdate() {
-    var existing = document.querySelector('.update-banner');
-    if (existing) return;
+    if (document.querySelector('.update-banner')) return;
 
     var banner = document.createElement('div');
     banner.className = 'update-banner fade-in';
@@ -166,17 +161,6 @@
     banner.querySelector('.update-close').addEventListener('click', function () {
       banner.remove();
     });
-  }
-
-  /* ==========================================
-     Lazy loading images
-     ========================================== */
-  function initLazyLoading() {
-    if ('loading' in HTMLImageElement.prototype) {
-      document.querySelectorAll('img[loading="lazy"]').forEach(function (img) {
-        img.src = img.dataset.src || img.src;
-      });
-    }
   }
 
   /* ==========================================
@@ -205,7 +189,6 @@
         initShareButtons();
         initActiveNav();
         initKeyboardNav();
-        initLazyLoading();
         initSW();
         initVersionCheck();
       });
@@ -214,7 +197,6 @@
       initShareButtons();
       initActiveNav();
       initKeyboardNav();
-      initLazyLoading();
       initSW();
       initVersionCheck();
     }

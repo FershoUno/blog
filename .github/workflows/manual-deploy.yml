@@ -2,6 +2,19 @@ name: Deploy Manual
 
 on:
   workflow_dispatch:
+    inputs:
+      BASE_URL:
+        description: 'Base URL path'
+        required: false
+        default: '/blog'
+      SITE_URL:
+        description: 'Site URL'
+        required: false
+        default: 'https://fershouno.github.io/blog'
+      CNAME:
+        description: 'Custom domain (opcional)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -26,6 +39,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          BASE_URL: ${{ github.event.inputs.BASE_URL }}
+          SITE_URL: ${{ github.event.inputs.SITE_URL }}
+          CNAME: ${{ github.event.inputs.CNAME }}
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v4
         with:

@@ -7,9 +7,7 @@ on:
       - 'content/**'
       - 'assets/**'
       - 'scripts/**'
-      - 'templates/**'
       - 'package.json'
-      - 'manifest.json'
   workflow_dispatch:
 
 permissions:
@@ -23,6 +21,11 @@ concurrency:
 
 env:
   NODE_VERSION: 20
+  BASE_URL: /blog
+  SITE_URL: https://fershouno.github.io/blog
+  SITE_NAME: Debian MicroNews
+  SITE_DESC: Noticias sobre Debian, GNU/Linux y Software Libre
+  CNAME: ""
 
 jobs:
   validate:
@@ -35,25 +38,28 @@ jobs:
           cache: npm
       - run: npm ci
 
-      - name: Validar frontmatter de posts
+      - name: Validar frontmatter y assets
         run: |
           for file in content/posts/*.md; do
             [ -f "$file" ] || continue
-            echo "Validando $file..."
-            yq_output=$(node -e "
-              const fs = require('fs');
-              const yaml = require('js-yaml');
+            node -e "
+              const fs = require('fs'), yaml = require('js-yaml');
               const raw = fs.readFileSync('$file', 'utf-8');
-              const match = raw.match(/^---\n([\s\S]*?)\n---/);
-              if (!match) { console.log('❌ $file: Sin frontmatter'); process.exit(1); }
-              const fm = yaml.load(match[1]);
-              const required = ['title','date','category'];
-              required.forEach(f => {
-                if (!fm[f]) { console.log('❌ $file: Falta ' + f); process.exit(1); }
+              const m = raw.match(/^---\n([\s\S]*?)\n---/);
+              if (!m) { console.log('❌ $file: sin frontmatter'); process.exit(1); }
+              const fm = yaml.load(m[1]);
+              ['title','date','category'].forEach(f => {
+                if (!fm[f]) { console.log('❌ $file: falta ' + f); process.exit(1); }
               });
-              if (fm.published === false) { console.log('⚠️ $file: No publicado, omitido'); }
-              console.log('✅ $file OK');
-            ") || exit 1
+              if (fm.cover) {
+                const imgPath = 'assets/' + fm.cover.replace('assets/', '');
+                if (!fs.existsSync(imgPath)) {
+                  console.log('❌ $file: imagen faltante ' + fm.cover);
+                  process.exit(1);
+                }
+              }
+              console.log('✅ $file');
+            "
           done
 
   build:
@@ -66,9 +72,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-
-      - name: Build completo
-        run: npm run build
+      - run: npm run build
+        env:
+          BASE_URL: ${{ env.BASE_URL }}
+          SITE_URL: ${{ env.SITE_URL }}
+          SITE_NAME: ${{ env.SITE_NAME }}
+          SITE_DESC: ${{ env.SITE_DESC }}
+          CNAME: ${{ env.CNAME }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -88,16 +98,3 @@ jobs:
       - name: Deploy a GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-  generate-icons:
-    needs: build
-    runs-on: ubuntu-latest
-    if: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: Generar PNG icons desde SVG
-        run: |
-          echo "Instalar librerías para convertir SVG a PNG..."
-          echo "sudo apt install -y librsvg2-bin"
-          echo "rsvg-convert -w 192 -h 192 assets/icons/icon-192.svg > public/assets/icons/icon-192.png"
-          echo "rsvg-convert -w 512 -h 512 assets/icons/icon-512.svg > public/assets/icons/icon-512.png"

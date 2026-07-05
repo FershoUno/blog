@@ -1,18 +1,16 @@
 (function () {
   'use strict';
 
+  var BASE = window.__BASE_URL || '';
   var searchInput = document.getElementById('search-input');
   var resultsContainer = document.getElementById('search-results');
   var posts = [];
   var searchTimeout = null;
 
-  /* ==========================================
-     Load search index
-     ========================================== */
   function loadIndex() {
-    return fetch('/blog/data/search.json?_=' + Date.now())
+    return fetch(BASE + '/data/search.json?_=' + Date.now())
       .then(function (r) {
-        if (!r.ok) throw new Error('No se pudo cargar el índice');
+        if (!r.ok) throw new Error('search.json not found');
         return r.json();
       })
       .then(function (data) {
@@ -20,8 +18,7 @@
         resultsContainer.innerHTML = '<p class="search-hint">' + posts.length + ' artículos indexados. Escribe para buscar...</p>';
       })
       .catch(function () {
-        // Fallback: load posts.json and build index on client
-        return fetch('/blog/data/posts.json?_=' + Date.now())
+        return fetch(BASE + '/data/posts.json?_=' + Date.now())
           .then(function (r) { return r.json(); })
           .then(function (data) {
             posts = data;
@@ -33,9 +30,6 @@
       });
   }
 
-  /* ==========================================
-     Search function
-     ========================================== */
   function search(query) {
     if (!query || query.length < 2) {
       resultsContainer.innerHTML = '<p class="search-hint">Escribe al menos 2 caracteres para buscar...</p>';
@@ -47,8 +41,7 @@
 
     for (var i = 0; i < posts.length; i++) {
       var p = posts[i];
-      var searchText = (p.title + ' ' + (p.summary || '') + ' ' + (p.category || '') + ' ' + p.tags.join(' ') + ' ' + (p.author || '')).toLowerCase();
-
+      var searchText = (p.title + ' ' + (p.summary || '') + ' ' + (p.category || '') + ' ' + (p.tags || []).join(' ') + ' ' + (p.author || '')).toLowerCase();
       if (searchText.indexOf(q) !== -1) {
         matched.push(p);
       }
@@ -64,29 +57,23 @@
     for (var j = 0; j < matched.length; j++) {
       var post = matched[j];
       var timeDisplay = formatDate(post.date) + ' · ' + post.time;
-      var excerpt = highlightMatch(post.summary || post.title, q);
-
       html +=
         '<div class="search-result fade-in">' +
-          '<a href="/blog/post/' + post.id + '/">' + highlightMatch(post.title, q) + '</a>' +
+          '<a href="' + BASE + '/post/' + post.id + '/">' + highlightMatch(post.title, q) + '</a>' +
           '<div class="result-meta">' +
             '<span class="category-badge">' + post.category + '</span> ' +
             timeDisplay + ' · ' + post.author +
           '</div>' +
-          '<div class="result-excerpt">' + excerpt + '</div>' +
+          '<div class="result-excerpt">' + highlightMatch(post.summary || post.title, q) + '</div>' +
         '</div>';
     }
 
     resultsContainer.innerHTML = html;
 
-    // Update URL with search query
     try {
       var url = new URL(window.location);
-      if (query) {
-        url.searchParams.set('q', query);
-      } else {
-        url.searchParams.delete('q');
-      }
+      if (query) url.searchParams.set('q', query);
+      else url.searchParams.delete('q');
       window.history.replaceState({}, '', url);
     } catch (e) {}
   }
@@ -98,15 +85,11 @@
   }
 
   function formatDate(dateStr) {
-    var d = new Date(dateStr);
-    return d.toLocaleDateString('es-ES', {
+    return new Date(dateStr).toLocaleDateString('es-ES', {
       year: 'numeric', month: 'long', day: 'numeric'
     });
   }
 
-  /* ==========================================
-     Init
-     ========================================== */
   function init() {
     if (!searchInput) return;
 
@@ -119,7 +102,6 @@
       }, 250);
     });
 
-    // Read query from URL
     try {
       var params = new URL(window.location).searchParams;
       var q = params.get('q');
