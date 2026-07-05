@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "description": "Plataforma de microblogging estática sobre Debian, GNU/Linux y Software Libre",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "build": "node scripts/build.js"
   },

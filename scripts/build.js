@@ -346,6 +346,11 @@ function renderHead(title, desc, canonical, ogType, extraMeta) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)}${title !== SITE_NAME ? ' - ' + SITE_NAME : ''}</title>
   <meta name="description" content="${escapeHtml(desc || SITE_DESC)}">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'">
+  <meta name="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta name="Permissions-Policy" content="accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), usb=()">
   <link rel="canonical" href="${fullUrl(canonical)}">
   <meta property="og:type" content="${ogType}">
   <meta property="og:title" content="${escapeHtml(title)}">

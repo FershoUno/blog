@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: 20
+  NODE_VERSION: 24
   SITE_NAME: Debian MicroNews
   SITE_DESC: Noticias sobre Debian, GNU/Linux y Software Libre
 
@@ -99,7 +99,7 @@ jobs:
         uses: actions/configure-pages@v4
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: public
 
