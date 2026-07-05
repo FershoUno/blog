@@ -38,8 +38,8 @@ jobs:
       - run: npm run build
         env:
           SITE_URL: ${{ github.event.inputs.SITE_URL }}
-          SITE_NAME: Debian MicroNews
-          SITE_DESC: Noticias sobre Debian, GNU/Linux y Software Libre
+          SITE_NAME: Fersho Uno - Blog
+          SITE_DESC: Blog personal de Fernando
           CNAME: ${{ github.event.inputs.CNAME }}
 
       - uses: actions/configure-pages@v4

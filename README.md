@@ -1,6 +1,6 @@
-# Debian MicroNews
+# Fersho Uno - Blog
 
-Plataforma de microblogging estática sobre Debian, GNU/Linux y Software Libre.
+Blog personal de Fernando.
 
 **Arquitectura:** Jamstack · **Hosting:** GitHub Pages · **Build:** Node.js · **Frontend:** HTML/CSS/JS vanilla
 
@@ -19,13 +19,13 @@ Crear .md → Git Add → Git Commit → Git Push → GitHub Actions → Publica
 ├── assets/              # Recursos estáticos
 │   ├── css/style.css    # Sistema de diseño completo
 │   ├── js/
-│   │   ├── app.js       # App principal (menú, share, PWA)
+│   │   ├── app.js       # App principal (menú, share, PWA, notificaciones)
 │   │   ├── search.js    # Búsqueda instantánea cliente
 │   │   └── offline.js   # (no usado en build, mantenido como referencia)
-│   ├── icons/           # Favicon e íconos SVG
+│   ├── icons/           # Favicon e íconos SVG y PNG (generados)
 │   └── images/          # Portadas e imágenes
 ├── scripts/
-│   ├── config.js        # Config central (BASE_URL, SITE_URL, helpers)
+│   ├── config.js        # Config central (SITE_URL, helpers url/asset/fullUrl)
 │   └── build.js         # Build orquestador principal
 ├── public/              # Output de build (para GitHub Pages, gitignorado)
 └── .github/workflows/   # CI/CD
@@ -74,11 +74,7 @@ npm run build    # SITE_URL por defecto: https://blog.fershouno.me
 SITE_URL=https://fershunoo.github.io/blog npm run build
 ```
 
-`BASE_URL` se deriva automáticamente de `SITE_URL`. También se puede forzar:
-
-```bash
-BASE_URL=/blog npm run build
-```
+`BASE_URL` se deriva automáticamente de `SITE_URL`.
 
 ## GitHub Actions
 
@@ -87,7 +83,8 @@ El workflow en `.github/workflows/deploy.yml`:
 1. **Valida** frontmatter de todos los posts
 2. **Construye** el sitio completo (genera HTML, RSS, sitemap, search index, JSON-LD)
 3. **Valida** assets y enlaces post-build
-4. **Despliega** a GitHub Pages
+4. **Valida** que no existan rutas `/blog/` en el output
+5. **Despliega** a GitHub Pages
 
 Push a `main` → publicación automática.
 
@@ -96,8 +93,9 @@ Push a `main` → publicación automática.
 - Service Worker con estrategia Cache First + Network Update
 - Offline page
 - Manifest con shortcuts y splash screen
-- Detección de nuevas versiones (polling cada 60s)
+- Detección de versiones (polling cada 60s)
 - Banner de actualización sin recarga forzada
+- Notificaciones push cuando hay nuevo contenido
 
 ## Búsqueda
 
@@ -111,10 +109,19 @@ Variables de entorno:
 | Variable     | Descripción                          | Default                          |
 |-------------|--------------------------------------|----------------------------------|
 | `SITE_URL`  | URL completa del sitio               | `https://blog.fershouno.me`      |
-| `BASE_URL`  | Prefijo de ruta (auto-derivado)      | Desde `SITE_URL`                 |
-| `SITE_NAME` | Nombre del sitio                     | `Debian MicroNews`               |
-| `SITE_DESC` | Descripción del sitio                | `Noticias sobre Debian, ...`     |
+| `SITE_NAME` | Nombre del sitio                     | `Fersho Uno - Blog`              |
+| `SITE_DESC` | Descripción del sitio                | `Blog personal de Fernando`      |
 | `CNAME`     | Dominio personalizado (opcional)     | —                                |
+
+## Helpers de URL
+
+Todas las rutas se construyen mediante helpers centralizados en `config.js`:
+
+```js
+url('/post/000001/')       // → /post/000001/  o  /blog/post/000001/
+asset('css/style.css')     // → /assets/css/style.css  o  /blog/assets/css/style.css
+fullUrl('/post/000001/')   // → https://blog.fershouno.me/post/000001/
+```
 
 ## Características técnicas
 
@@ -122,12 +129,13 @@ Variables de entorno:
 - ✅ Markdown completo (CommonMark + GFM) con syntax highlighting
 - ✅ OpenGraph, Twitter Cards, JSON-LD
 - ✅ RSS + sitemap + robots.txt
-- ✅ Categorías dinámicas
+- ✅ Categorías dinámicas desde frontmatter
 - ✅ Headers de seguridad (CSP, Referrer-Policy, X-Content-Type-Options, X-Frame-Options, Permissions-Policy)
 - ✅ Puntuación Lighthouse ≥ 95 objetivo
 - ✅ WCAG AA (teclado, ARIA, contraste, focus visible)
 - ✅ Responsive (mobile → ultrawide)
 - ✅ Lazy loading de imágenes
 - ✅ Tema oscuro profesional (GitHub Dark / Catppuccin Mocha)
-- ✅ Validación de assets y enlaces en build
-- ✅ PWA: Service Worker, offline, manifest, actualización automática
+- ✅ Validación de assets, enlaces y rutas `/blog/` en build
+- ✅ PWA: Service Worker, offline, manifest, notificaciones, actualización automática
+- ✅ Icono SVG/PNG generado automáticamente con tema Linux

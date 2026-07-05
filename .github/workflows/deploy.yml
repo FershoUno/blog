@@ -21,8 +21,8 @@ concurrency:
 
 env:
   NODE_VERSION: 24
-  SITE_NAME: Debian MicroNews
-  SITE_DESC: Noticias sobre Debian, GNU/Linux y Software Libre
+  SITE_NAME: Fersho Uno - Blog
+  SITE_DESC: Blog personal de Fernando
 
 jobs:
   validate:

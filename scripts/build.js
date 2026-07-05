@@ -8,7 +8,7 @@ const yaml = require('js-yaml');
 const zlib = require('zlib');
 const cfg = require('./config');
 
-const { BASE_URL, SITE_URL, SITE_NAME, SITE_DESC, url, fullUrl } = cfg;
+const { BASE_URL, SITE_URL, SITE_NAME, SITE_DESC, url, fullUrl, asset } = cfg;
 const { CONTENT_DIR, DATA_DIR, PUBLIC_DIR, ASSETS_DIR } = cfg;
 
 const REQUIRED_FM = ['title', 'date', 'category'];
@@ -32,7 +32,7 @@ marked.use({
 /* ═══════════════════════════════════════════════
    PNG Icon Generator (pure Node.js, no deps)
    ═══════════════════════════════════════════════ */
-function createPNG(width, height, r, g, b) {
+function createPNG(width, height) {
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
   function chunk(type, data) {
@@ -59,6 +59,13 @@ function createPNG(width, height, r, g, b) {
     rawData[y * (1 + width * 3)] = 0;
     for (let x = 0; x < width; x++) {
       const offset = y * (1 + width * 3) + 1 + x * 3;
+      const cx = x / width;
+      const cy = y / height;
+      const dist = Math.sqrt((cx - 0.5) ** 2 + (cy - 0.5) ** 2) * 1.4;
+      const gradient = Math.min(1, Math.max(0, dist));
+      const r = Math.round(30 + gradient * (0 - 30));
+      const g = Math.round(80 + gradient * (180 - 80));
+      const b = Math.round(40 + gradient * (80 - 40));
       rawData[offset] = r;
       rawData[offset + 1] = g;
       rawData[offset + 2] = b;
@@ -183,10 +190,8 @@ function generateIcons() {
     { size: 512, file: 'icon-512.png' },
   ];
 
-  const accent = [88, 166, 255];
-
   for (const { size, file } of sizes) {
-    const png = createPNG(size, size, ...accent);
+    const png = createPNG(size, size);
     const outPath = path.join(iconsDir, file);
     fs.writeFileSync(outPath, png);
     console.log(`  ✅ ${file} (${size}x${size})`);
@@ -199,7 +204,7 @@ function generateIcons() {
 function writeManifest() {
   const manifest = {
     name: SITE_NAME,
-    short_name: 'DBN MicroNews',
+    short_name: 'Fersho Uno',
     description: SITE_DESC,
     start_url: url('/'),
     display: 'standalone',
@@ -210,9 +215,9 @@ function writeManifest() {
     lang: 'es',
     scope: url('/'),
     icons: [
-      { src: url('/assets/icons/icon-192.png'), type: 'image/png', sizes: '192x192', purpose: 'any maskable' },
-      { src: url('/assets/icons/icon-512.png'), type: 'image/png', sizes: '512x512', purpose: 'any maskable' },
-      { src: url('/assets/icons/favicon.svg'), type: 'image/svg+xml', sizes: '192x192', purpose: 'any' },
+      { src: asset('icons/icon-192.png'), type: 'image/png', sizes: '192x192', purpose: 'any maskable' },
+      { src: asset('icons/icon-512.png'), type: 'image/png', sizes: '512x512', purpose: 'any maskable' },
+      { src: asset('icons/favicon.svg'), type: 'image/svg+xml', sizes: '192x192', purpose: 'any' },
     ],
     shortcuts: [
       {
@@ -220,14 +225,14 @@ function writeManifest() {
         short_name: 'Novedades',
         description: 'Ver los artículos más recientes',
         url: url('/'),
-        icons: [{ src: url('/assets/icons/icon-192.png'), sizes: '192x192' }]
+        icons: [{ src: asset('icons/icon-192.png'), sizes: '192x192' }]
       },
       {
         name: 'Buscar',
         short_name: 'Buscar',
         description: 'Buscar artículos',
         url: url('/search.html'),
-        icons: [{ src: url('/assets/icons/icon-192.png'), sizes: '192x192' }]
+        icons: [{ src: asset('icons/icon-192.png'), sizes: '192x192' }]
       }
     ]
   };
@@ -240,9 +245,9 @@ function writeManifest() {
 function writeServiceWorker(posts) {
   const precacheUrls = [
     url('/'),
-    url('/assets/css/style.css'),
-    url('/assets/js/config.js'),
-    url('/assets/js/app.js'),
+    asset('css/style.css'),
+    asset('js/config.js'),
+    asset('js/app.js'),
     url('/offline.html'),
     url('/data/posts.json'),
     url('/data/search.json'),
@@ -255,7 +260,7 @@ function writeServiceWorker(posts) {
   const offlineUrl = url('/offline.html');
 
   const sw = `
-var CACHE_NAME = 'debian-micronews-' + Date.now();
+var CACHE_NAME = 'fersho-blog-' + Date.now();
 var OFFLINE_URL = '${offlineUrl}';
 
 var PRECACHE_URLS = [
@@ -361,10 +366,10 @@ function renderHead(title, desc, canonical, ogType, extraMeta) {
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(desc || SITE_DESC)}">
   ${extraMeta || ''}
-  <link rel="stylesheet" href="${url('/assets/css/style.css')}">
+  <link rel="stylesheet" href="${asset('css/style.css')}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/svg+xml" href="${url('/assets/icons/favicon.svg')}">
+  <link rel="icon" type="image/svg+xml" href="${asset('icons/favicon.svg')}">
   <link rel="alternate" type="application/rss+xml" title="${SITE_NAME}" href="${url('/rss.xml')}">
   <link rel="manifest" href="${url('/manifest.json')}">
 </head>`;
@@ -394,8 +399,8 @@ function renderFooter() {
     <p>&copy; ${new Date().getFullYear()} ${SITE_NAME}.</p>
   </div>
 </footer>
-<script src="${url('/assets/js/config.js')}"></script>
-<script src="${url('/assets/js/app.js')}"></script>`;
+<script src="${asset('js/config.js')}"></script>
+<script src="${asset('js/app.js')}"></script>`;
 }
 
 /* ═══════════════════════════════════════════════
@@ -420,7 +425,9 @@ function validateNoBlogPrefix() {
     for (let i = 0; i < lines.length; i++) {
       const idx = lines[i].indexOf('/blog/');
       if (idx !== -1) {
+        const snippet = lines[i].substring(Math.max(0, idx - 20), idx + 30);
         console.error(`  ❌ /blog/ en ${path.relative(PUBLIC_DIR, file)}:${i + 1}:${idx + 1}`);
+        console.error(`     → ...${snippet.trim()}...`);
         errors++;
       }
     }
@@ -503,7 +510,7 @@ function validateHtmlPaths() {
    ═══════════════════════════════════════════════ */
 async function build() {
   console.log('\n══════════════════════════════════════════');
-  console.log('  Debian MicroNews - Builder');
+  console.log('  Fersho Uno - Blog Builder');
   console.log(`  BASE_URL: ${BASE_URL}`);
   console.log(`  SITE_URL: ${SITE_URL}`);
   console.log('══════════════════════════════════════════\n');
@@ -613,7 +620,7 @@ async function build() {
 
     const relatedHtml = related.map(r => `
       <a href="${url(`/post/${r.id}/`)}" class="related-card">
-        ${r.cover ? `<img src="${url('/' + r.cover)}" alt="${r.title}" loading="lazy">` : ''}
+        ${r.cover ? `<img src="${asset(r.cover.replace('assets/', ''))}" alt="${r.title}" loading="lazy">` : ''}
         <div>
           <span class="category-badge">${r.category}</span>
           <h4>${r.title}</h4>
@@ -651,7 +658,7 @@ ${renderHead(post.title, post.summary || post.title, '/' + 'post/' + post.id + '
   ${renderHeader()}
   <main class="container post-page">
     <article class="post-full">
-      ${post.cover ? `<img src="${url('/' + post.cover)}" alt="${post.title}" class="post-cover" loading="eager">` : ''}
+      ${post.cover ? `<img src="${asset(post.cover.replace('assets/', ''))}" alt="${post.title}" class="post-cover" loading="eager">` : ''}
       <header class="post-header">
         <span class="category-badge">${post.category}</span>
         <h1>${post.title}</h1>
@@ -696,7 +703,7 @@ ${renderHead(post.title, post.summary || post.title, '/' + 'post/' + post.id + '
     const timeEst = p.readingTime === 1 ? '1 min' : `${p.readingTime} min`;
     return `
     <article class="post-card">
-      ${p.cover ? `<img src="${url('/' + p.cover)}" alt="${p.title}" class="card-cover" loading="lazy">` : ''}
+      ${p.cover ? `<img src="${asset(p.cover.replace('assets/', ''))}" alt="${p.title}" class="card-cover" loading="lazy">` : ''}
       <div class="card-body">
         <span class="category-badge">${p.category}</span>
         <time datetime="${p.date}">${formatDate(p.date)} · ${p.time}</time>
@@ -743,7 +750,7 @@ ${renderHead(SITE_NAME, SITE_DESC, '/', 'website')}
       const timeEst = p.readingTime === 1 ? '1 min' : `${p.readingTime} min`;
       return `
       <article class="post-card">
-        ${p.cover ? `<img src="${url('/' + p.cover)}" class="card-cover" loading="lazy">` : ''}
+        ${p.cover ? `<img src="${asset(p.cover.replace('assets/', ''))}" class="card-cover" loading="lazy">` : ''}
         <div class="card-body">
           <span class="category-badge">${p.category}</span>
           <time datetime="${p.date}">${formatDate(p.date)} · ${p.time}</time>
@@ -793,7 +800,7 @@ ${renderHead('Buscar - ' + SITE_NAME, 'Buscar artículos', '/search.html', 'webs
     </div>
   </main>
   ${renderFooter()}
-  <script src="${url('/assets/js/search.js')}"></script>
+  <script src="${asset('js/search.js')}"></script>
 </body>
 </html>`;
 
@@ -810,7 +817,7 @@ ${renderHead('404 - ' + SITE_NAME, 'Página no encontrada', '/404.html', 'websit
     <p>Página no encontrada</p>
     <a href="${url('/')}" class="btn-primary">Volver al inicio</a>
   </main>
-  <script src="${url('/assets/js/config.js')}"></script>
+  <script src="${asset('js/config.js')}"></script>
 </body>
 </html>`;
   fs.writeFileSync(path.join(PUBLIC_DIR, '404.html'), notFoundHtml);
@@ -826,7 +833,7 @@ ${renderHead('Sin conexión - ' + SITE_NAME, 'Sin conexión a Internet', '/offli
     <p>No hay conexión a Internet. Los artículos guardados están disponibles sin conexión.</p>
     <button class="btn-primary" onclick="location.reload()">Reintentar</button>
   </main>
-  <script src="${url('/assets/js/config.js')}"></script>
+  <script src="${asset('js/config.js')}"></script>
 </body>
 </html>`;
   fs.writeFileSync(path.join(PUBLIC_DIR, 'offline.html'), offlineHtml);

@@ -106,7 +106,24 @@
   }
 
   /* ==========================================
-     PWA: Periodic version check (Mode 1)
+     PWA: Push notification permission
+     ========================================== */
+  function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }
+
+  function sendNotification(title, body) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      var n = new Notification(title, { body: body, icon: BASE + '/assets/icons/icon-192.png' });
+      n.addEventListener('click', function () { window.focus(); n.close(); });
+    } catch (e) {}
+  }
+
+  /* ==========================================
+     PWA: Periodic version check
      ========================================== */
   function initVersionCheck() {
     var currentVersion = null;
@@ -122,6 +139,7 @@
         .then(function (data) {
           if (currentVersion && data.version !== currentVersion) {
             showContentUpdate();
+            sendNotification(window.__SITE_NAME || 'Fersho Uno - Blog', 'Nuevos artículos disponibles');
             currentVersion = data.version;
           } else if (!currentVersion) {
             currentVersion = data.version;
@@ -176,6 +194,7 @@
         initKeyboardNav();
         initSW();
         initVersionCheck();
+        requestNotificationPermission();
       });
     } else {
       initMenu();
@@ -183,6 +202,7 @@
       initKeyboardNav();
       initSW();
       initVersionCheck();
+      requestNotificationPermission();
     }
   }
 

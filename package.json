@@ -1,8 +1,8 @@
 {
-  "name": "debian-micronews",
+  "name": "fersho-uno-blog",
   "version": "1.0.0",
   "private": true,
-  "description": "Plataforma de microblogging estática sobre Debian, GNU/Linux y Software Libre",
+  "description": "Blog personal de Fernando",
   "engines": {
     "node": ">=24"
   },

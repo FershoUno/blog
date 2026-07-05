@@ -25,11 +25,15 @@ function fullUrl(p) {
   return SITE_URL + clean;
 }
 
+function asset(p) {
+  return url('/assets/' + p.replace(/^\/+/, ''));
+}
+
 module.exports = {
   BASE_URL,
   SITE_URL,
-  SITE_NAME: process.env.SITE_NAME || 'Debian MicroNews',
-  SITE_DESC: process.env.SITE_DESC || 'Noticias sobre Debian, GNU/Linux y Software Libre',
+  SITE_NAME: process.env.SITE_NAME || 'Fersho Uno - Blog',
+  SITE_DESC: process.env.SITE_DESC || 'Blog personal de Fernando',
   ROOT,
   CONTENT_DIR: path.join(ROOT, 'content', 'posts'),
   DATA_DIR: path.join(ROOT, 'data'),
@@ -37,4 +41,5 @@ module.exports = {
   ASSETS_DIR: path.join(ROOT, 'assets'),
   url,
   fullUrl,
+  asset,
 };
