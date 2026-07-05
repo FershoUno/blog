@@ -59,20 +59,6 @@
   }
 
   /* ==========================================
-     Active nav link (based on path)
-     ========================================== */
-  function initActiveNav() {
-    var path = window.location.pathname.replace(BASE, '') || '/';
-    document.querySelectorAll('[data-nav]').forEach(function (el) {
-      var href = el.getAttribute('href').replace(BASE, '');
-      el.classList.toggle('active', href === path);
-      if (path === '/' || path === '') {
-        el.classList.toggle('active', href === '/');
-      }
-    });
-  }
-
-  /* ==========================================
      PWA: Service Worker
      ========================================== */
   function initSW() {
@@ -187,7 +173,6 @@
       document.addEventListener('DOMContentLoaded', function () {
         initMenu();
         initShareButtons();
-        initActiveNav();
         initKeyboardNav();
         initSW();
         initVersionCheck();
@@ -195,7 +180,6 @@
     } else {
       initMenu();
       initShareButtons();
-      initActiveNav();
       initKeyboardNav();
       initSW();
       initVersionCheck();

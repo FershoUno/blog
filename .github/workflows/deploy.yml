@@ -21,11 +21,8 @@ concurrency:
 
 env:
   NODE_VERSION: 20
-  BASE_URL: /blog
-  SITE_URL: https://fershouno.github.io/blog
   SITE_NAME: Debian MicroNews
   SITE_DESC: Noticias sobre Debian, GNU/Linux y Software Libre
-  CNAME: ""
 
 jobs:
   validate:
@@ -52,7 +49,7 @@ jobs:
                 if (!fm[f]) { console.log('❌ $file: falta ' + f); process.exit(1); }
               });
               if (fm.cover) {
-                const imgPath = 'assets/' + fm.cover.replace('assets/', '');
+                const imgPath = fm.cover.startsWith('/') ? '.' + fm.cover : 'assets/' + fm.cover.replace(/^assets\//, '');
                 if (!fs.existsSync(imgPath)) {
                   console.log('❌ $file: imagen faltante ' + fm.cover);
                   process.exit(1);
@@ -72,13 +69,31 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
+
+      - name: Construir SITE_URL
+        id: site
+        run: |
+          REPO="${{ github.repository }}"
+          OWNER="${REPO%/*}"
+          REPO_NAME="${REPO#*/}"
+          if [ -n "${{ vars.SITE_URL }}" ]; then
+            URL="${{ vars.SITE_URL }}"
+          else
+            URL="https://${OWNER}.github.io/${REPO_NAME}"
+          fi
+          echo "url=${URL}" >> $GITHUB_OUTPUT
+          if [ -n "${{ vars.CNAME }}" ]; then
+            echo "cname=${{ vars.CNAME }}" >> $GITHUB_OUTPUT
+          else
+            echo "cname=" >> $GITHUB_OUTPUT
+          fi
+
       - run: npm run build
         env:
-          BASE_URL: ${{ env.BASE_URL }}
-          SITE_URL: ${{ env.SITE_URL }}
+          SITE_URL: ${{ steps.site.outputs.url }}
           SITE_NAME: ${{ env.SITE_NAME }}
           SITE_DESC: ${{ env.SITE_DESC }}
-          CNAME: ${{ env.CNAME }}
+          CNAME: ${{ steps.site.outputs.cname }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

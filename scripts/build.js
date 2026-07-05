@@ -8,11 +8,10 @@ const yaml = require('js-yaml');
 const zlib = require('zlib');
 const cfg = require('./config');
 
-const { BASE_URL, SITE_URL, SITE_NAME, SITE_DESC } = cfg;
+const { BASE_URL, SITE_URL, SITE_NAME, SITE_DESC, url, fullUrl } = cfg;
 const { CONTENT_DIR, DATA_DIR, PUBLIC_DIR, ASSETS_DIR } = cfg;
 
 const REQUIRED_FM = ['title', 'date', 'category'];
-const ASSET_EXTENSIONS = /\.(png|jpg|jpeg|gif|svg|webp|ico|css|js|json|xml)$/i;
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -30,9 +29,9 @@ marked.use({
   }
 });
 
-/* ============================================
-   PNG Icon Generator (pure Node.js)
-   ============================================ */
+/* ═══════════════════════════════════════════════
+   PNG Icon Generator (pure Node.js, no deps)
+   ═══════════════════════════════════════════════ */
 function createPNG(width, height, r, g, b) {
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
@@ -49,15 +48,15 @@ function createPNG(width, height, r, g, b) {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8;  // bit depth
-  ihdr[9] = 2;  // color type RGB
-  ihdr[10] = 0; // compression
-  ihdr[11] = 0; // filter
-  ihdr[12] = 0; // interlace
+  ihdr[8] = 8;
+  ihdr[9] = 2;
+  ihdr[10] = 0;
+  ihdr[11] = 0;
+  ihdr[12] = 0;
 
   const rawData = Buffer.alloc(height * (1 + width * 3));
   for (let y = 0; y < height; y++) {
-    rawData[y * (1 + width * 3)] = 0; // filter byte
+    rawData[y * (1 + width * 3)] = 0;
     for (let x = 0; x < width; x++) {
       const offset = y * (1 + width * 3) + 1 + x * 3;
       rawData[offset] = r;
@@ -84,9 +83,9 @@ function crc32(buf) {
   return (crc ^ 0xFFFFFFFF) >>> 0;
 }
 
-/* ============================================
+/* ═══════════════════════════════════════════════
    Read & validate posts
-   ============================================ */
+   ═══════════════════════════════════════════════ */
 function readPosts() {
   if (!fs.existsSync(CONTENT_DIR)) return [];
   const files = fs.readdirSync(CONTENT_DIR)
@@ -144,9 +143,9 @@ function readPosts() {
   return posts.sort((a, b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
 }
 
-/* ============================================
+/* ═══════════════════════════════════════════════
    Helpers
-   ============================================ */
+   ═══════════════════════════════════════════════ */
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('es-ES', {
     year: 'numeric', month: 'long', day: 'numeric'
@@ -164,17 +163,17 @@ function validateAsset(filePath, context) {
   }
 }
 
-/* ============================================
-   Generate config.js for client
-   ============================================ */
+/* ═══════════════════════════════════════════════
+   Generate config.js for client (embeds BASE_URL)
+   ═══════════════════════════════════════════════ */
 function writeClientConfig() {
   const js = `(function(){window.__BASE_URL="${BASE_URL}";window.__SITE_URL="${SITE_URL}";window.__SITE_NAME="${SITE_NAME}";})();`;
   fs.writeFileSync(path.join(PUBLIC_DIR, 'assets', 'js', 'config.js'), js);
 }
 
-/* ============================================
+/* ═══════════════════════════════════════════════
    Generate PNG icons
-   ============================================ */
+   ═══════════════════════════════════════════════ */
 function generateIcons() {
   const iconsDir = path.join(PUBLIC_DIR, 'assets', 'icons');
   fs.ensureDirSync(iconsDir);
@@ -194,67 +193,73 @@ function generateIcons() {
   }
 }
 
-/* ============================================
-   Generate manifest.json
-   ============================================ */
+/* ═══════════════════════════════════════════════
+   Generate manifest.json (all paths via url())
+   ═══════════════════════════════════════════════ */
 function writeManifest() {
   const manifest = {
     name: SITE_NAME,
     short_name: 'DBN MicroNews',
     description: SITE_DESC,
-    start_url: `${BASE_URL}/`,
+    start_url: url('/'),
     display: 'standalone',
     orientation: 'any',
     background_color: '#0d1117',
     theme_color: '#0d1117',
     categories: ['news', 'technology', 'linux'],
     lang: 'es',
-    scope: `${BASE_URL}/`,
+    scope: url('/'),
     icons: [
-      { src: `${BASE_URL}/assets/icons/icon-192.png`, type: 'image/png', sizes: '192x192', purpose: 'any maskable' },
-      { src: `${BASE_URL}/assets/icons/icon-512.png`, type: 'image/png', sizes: '512x512', purpose: 'any maskable' },
-      { src: `${BASE_URL}/assets/icons/favicon.svg`, type: 'image/svg+xml', sizes: '192x192', purpose: 'any' },
+      { src: url('/assets/icons/icon-192.png'), type: 'image/png', sizes: '192x192', purpose: 'any maskable' },
+      { src: url('/assets/icons/icon-512.png'), type: 'image/png', sizes: '512x512', purpose: 'any maskable' },
+      { src: url('/assets/icons/favicon.svg'), type: 'image/svg+xml', sizes: '192x192', purpose: 'any' },
     ],
     shortcuts: [
       {
         name: 'Últimos artículos',
         short_name: 'Novedades',
         description: 'Ver los artículos más recientes',
-        url: `${BASE_URL}/`,
-        icons: [{ src: `${BASE_URL}/assets/icons/icon-192.png`, sizes: '192x192' }]
+        url: url('/'),
+        icons: [{ src: url('/assets/icons/icon-192.png'), sizes: '192x192' }]
       },
       {
         name: 'Buscar',
         short_name: 'Buscar',
         description: 'Buscar artículos',
-        url: `${BASE_URL}/search.html`,
-        icons: [{ src: `${BASE_URL}/assets/icons/icon-192.png`, sizes: '192x192' }]
+        url: url('/search.html'),
+        icons: [{ src: url('/assets/icons/icon-192.png'), sizes: '192x192' }]
       }
     ]
   };
   fs.writeJsonSync(path.join(PUBLIC_DIR, 'manifest.json'), manifest, { spaces: 2 });
 }
 
-/* ============================================
-   Generate sw.js with BASE_URL injected
-   ============================================ */
+/* ═══════════════════════════════════════════════
+   Generate sw.js (all paths via url())
+   ═══════════════════════════════════════════════ */
 function writeServiceWorker(posts) {
-  const postUrls = posts.map(p => `${BASE_URL}/post/${p.id}/`);
+  const precacheUrls = [
+    url('/'),
+    url('/assets/css/style.css'),
+    url('/assets/js/config.js'),
+    url('/assets/js/app.js'),
+    url('/offline.html'),
+    url('/data/posts.json'),
+    url('/data/search.json'),
+    url('/version.json'),
+    url('/manifest.json'),
+  ];
+
+  const dataPrefix = url('/data/');
+  const versionPrefix = url('/version.json');
+  const offlineUrl = url('/offline.html');
 
   const sw = `
 var CACHE_NAME = 'debian-micronews-' + Date.now();
-var OFFLINE_URL = '${BASE_URL}/offline.html';
+var OFFLINE_URL = '${offlineUrl}';
 
 var PRECACHE_URLS = [
-  '${BASE_URL}/',
-  '${BASE_URL}/assets/css/style.css',
-  '${BASE_URL}/assets/js/config.js',
-  '${BASE_URL}/assets/js/app.js',
-  '${BASE_URL}/offline.html',
-  '${BASE_URL}/data/posts.json',
-  '${BASE_URL}/data/search.json',
-  '${BASE_URL}/version.json',
-  '${BASE_URL}/manifest.json'
+${precacheUrls.map(u => `  '${u}'`).join(',\n')}
 ];
 
 self.addEventListener('install', function (event) {
@@ -287,7 +292,7 @@ self.addEventListener('fetch', function (event) {
 
   var url = req.url;
 
-  if (url.indexOf('${BASE_URL}/data/') !== -1 || url.indexOf('${BASE_URL}/version.json') !== -1) {
+  if (url.indexOf('${dataPrefix}') !== -1 || url.indexOf('${versionPrefix}') !== -1) {
     event.respondWith(
       caches.open(CACHE_NAME).then(function (cache) {
         return fetch(req).then(function (res) {
@@ -301,7 +306,7 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  if (url.indexOf('${BASE_URL}/') !== -1) {
+  if (url.indexOf('${url('/')}') !== -1) {
     event.respondWith(
       caches.match(req).then(function (cached) {
         var fetchP = fetch(req).then(function (res) {
@@ -329,9 +334,9 @@ self.addEventListener('message', function (event) {
   fs.writeFileSync(path.join(PUBLIC_DIR, 'sw.js'), sw.trim());
 }
 
-/* ============================================
-   Generate HTML pages
-   ============================================ */
+/* ═══════════════════════════════════════════════
+   HTML templates (all paths via url() / fullUrl())
+   ═══════════════════════════════════════════════ */
 function renderHead(title, desc, canonical, ogType, extraMeta) {
   ogType = ogType || 'website';
   return `
@@ -340,22 +345,22 @@ function renderHead(title, desc, canonical, ogType, extraMeta) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)}${title !== SITE_NAME ? ' - ' + SITE_NAME : ''}</title>
   <meta name="description" content="${escapeHtml(desc || SITE_DESC)}">
-  <link rel="canonical" href="${SITE_URL}${canonical}">
+  <link rel="canonical" href="${fullUrl(canonical)}">
   <meta property="og:type" content="${ogType}">
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(desc || SITE_DESC)}">
-  <meta property="og:url" content="${SITE_URL}${canonical}">
+  <meta property="og:url" content="${fullUrl(canonical)}">
   <meta property="og:site_name" content="${SITE_NAME}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(desc || SITE_DESC)}">
   ${extraMeta || ''}
-  <link rel="stylesheet" href="${BASE_URL}/assets/css/style.css">
+  <link rel="stylesheet" href="${url('/assets/css/style.css')}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/svg+xml" href="${BASE_URL}/assets/icons/favicon.svg">
-  <link rel="alternate" type="application/rss+xml" title="${SITE_NAME}" href="${BASE_URL}/rss.xml">
-  <link rel="manifest" href="${BASE_URL}/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="${url('/assets/icons/favicon.svg')}">
+  <link rel="alternate" type="application/rss+xml" title="${SITE_NAME}" href="${url('/rss.xml')}">
+  <link rel="manifest" href="${url('/manifest.json')}">
 </head>`;
 }
 
@@ -363,11 +368,11 @@ function renderHeader(current) {
   return `
 <header class="site-header">
   <div class="container">
-    <a href="${BASE_URL}/" class="logo">${SITE_NAME}</a>
+    <a href="${url('/')}" class="logo">${SITE_NAME}</a>
     <nav class="nav-links" role="navigation" aria-label="Navegación principal">
-      <a href="${BASE_URL}/" ${current === 'home' ? 'aria-current="page"' : ''}>Inicio</a>
-      <a href="${BASE_URL}/search.html" ${current === 'search' ? 'aria-current="page"' : ''}>Buscar</a>
-      <a href="${BASE_URL}/rss.xml" target="_blank" rel="noopener">RSS</a>
+      <a href="${url('/')}" ${current === 'home' ? 'aria-current="page"' : ''}>Inicio</a>
+      <a href="${url('/search.html')}" ${current === 'search' ? 'aria-current="page"' : ''}>Buscar</a>
+      <a href="${url('/rss.xml')}" target="_blank" rel="noopener">RSS</a>
     </nav>
     <button class="menu-toggle" aria-label="Menú" aria-expanded="false">
       <span></span><span></span><span></span>
@@ -383,13 +388,83 @@ function renderFooter() {
     <p>&copy; ${new Date().getFullYear()} ${SITE_NAME}.</p>
   </div>
 </footer>
-<script src="${BASE_URL}/assets/js/config.js"></script>
-<script src="${BASE_URL}/assets/js/app.js"></script>`;
+<script src="${url('/assets/js/config.js')}"></script>
+<script src="${url('/assets/js/app.js')}"></script>`;
 }
 
-/* ============================================
+/* ═══════════════════════════════════════════════
+   HTML validation (verify all paths resolve)
+   ═══════════════════════════════════════════════ */
+function resolveHref(href, htmlFile) {
+  // Skip external, data URIs, anchors, mailto
+  if (/^(https?:|data:|mailto:|#|javascript:)/.test(href)) return null;
+
+  if (href.startsWith('/')) {
+    // Strip BASE_URL prefix to get filesystem path
+    let stripped = href;
+    if (BASE_URL) {
+      const basePrefix = BASE_URL.endsWith('/') ? BASE_URL : BASE_URL + '/';
+      if (href.startsWith(basePrefix)) {
+        stripped = href.slice(BASE_URL.length);
+      } else if (href === BASE_URL || href === BASE_URL + '/') {
+        stripped = '/';
+      } else {
+        // Root-relative path that doesn't match BASE_URL: broken
+        return { exists: false, filesystem: path.join(PUBLIC_DIR, href) };
+      }
+    }
+    let resolved = path.join(PUBLIC_DIR, stripped);
+    // Append index.html if path looks like a directory
+    try {
+      if (fs.existsSync(resolved) && fs.statSync(resolved).isDirectory()) {
+        resolved = path.join(resolved, 'index.html');
+      }
+    } catch (e) {}
+    return { exists: fs.existsSync(resolved), filesystem: resolved };
+  } else {
+    // Relative path: resolve from HTML file's directory
+    const resolved = path.resolve(path.dirname(htmlFile), href);
+    return { exists: fs.existsSync(resolved), filesystem: resolved };
+  }
+}
+
+function validateHtmlPaths() {
+  let errors = 0;
+  const htmlFiles = [];
+
+  function walk(dir) {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const e of entries) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (e.name.endsWith('.html')) htmlFiles.push(full);
+    }
+  }
+  walk(PUBLIC_DIR);
+
+  for (const file of htmlFiles) {
+    const html = fs.readFileSync(file, 'utf-8');
+    const relPath = path.relative(PUBLIC_DIR, file);
+
+    const attrRe = /(?:href|src)="([^"]+)"/g;
+    let match;
+    while ((match = attrRe.exec(html)) !== null) {
+      const val = match[1];
+      const result = resolveHref(val, file);
+      if (result === null) continue;
+      if (!result.exists) {
+        console.error(`  ❌ Enlace roto en ${relPath}: ${val} → ${path.relative(PUBLIC_DIR, result.filesystem)} no existe`);
+        errors++;
+      }
+    }
+  }
+
+  return errors;
+}
+
+/* ═══════════════════════════════════════════════
    MAIN BUILD
-   ============================================ */
+   ═══════════════════════════════════════════════ */
 async function build() {
   console.log('\n══════════════════════════════════════════');
   console.log('  Debian MicroNews - Builder');
@@ -416,8 +491,8 @@ async function build() {
   fs.copySync(path.join(ASSETS_DIR, 'css', 'style.css'), path.join(PUBLIC_DIR, 'assets', 'css', 'style.css'));
   console.log('  ✅ style.css');
 
-  // Copy JS sources (except sw.js which is generated)
-  const jsFiles = ['app.js', 'offline.js', 'search.js'];
+  // Copy JS sources
+  const jsFiles = ['app.js', 'search.js'];
   jsFiles.forEach(f => {
     const src = path.join(ASSETS_DIR, 'js', f);
     validateAsset(src, f);
@@ -429,7 +504,7 @@ async function build() {
   writeClientConfig();
   console.log('  ✅ config.js');
 
-  // Copy icons
+  // Copy SVG icons
   const iconFiles = ['favicon.svg', 'icon-192.svg', 'icon-512.svg'];
   iconFiles.forEach(f => {
     const src = path.join(ASSETS_DIR, 'icons', f);
@@ -457,7 +532,7 @@ async function build() {
     }
   });
 
-  // Generate posts.json
+  // Generate data JSONs
   const postsJson = posts.map(p => ({
     id: p.id, slug: p.slug, title: p.title, author: p.author,
     date: p.date, time: p.time, category: p.category, tags: p.tags,
@@ -467,7 +542,6 @@ async function build() {
   fs.writeJsonSync(path.join(PUBLIC_DIR, 'data', 'posts.json'), postsJson, { spaces: 2 });
   console.log('  ✅ posts.json');
 
-  // Generate index.json  
   fs.writeJsonSync(path.join(PUBLIC_DIR, 'data', 'index.json'), {
     site: { name: SITE_NAME, description: SITE_DESC, url: SITE_URL },
     posts: postsJson,
@@ -477,7 +551,6 @@ async function build() {
   }, { spaces: 2 });
   console.log('  ✅ index.json');
 
-  // Generate search.json
   const searchJson = posts.map(p => ({
     id: p.id, title: p.title, summary: p.summary,
     author: p.author, date: p.date, time: p.time,
@@ -487,7 +560,7 @@ async function build() {
   fs.writeJsonSync(path.join(PUBLIC_DIR, 'data', 'search.json'), searchJson, { spaces: 2 });
   console.log('  ✅ search.json');
 
-  // Generate post HTML pages
+  // ── Generate post HTML pages ──
   const categories = [...new Set(posts.map(p => p.category))];
 
   posts.forEach((post, i) => {
@@ -503,8 +576,8 @@ async function build() {
       .slice(0, 3);
 
     const relatedHtml = related.map(r => `
-      <a href="${BASE_URL}/post/${r.id}/" class="related-card">
-        ${r.cover ? `<img src="${BASE_URL}/${r.cover}" alt="${r.title}" loading="lazy">` : ''}
+      <a href="${url(`/post/${r.id}/`)}" class="related-card">
+        ${r.cover ? `<img src="${url('/' + r.cover)}" alt="${r.title}" loading="lazy">` : ''}
         <div>
           <span class="category-badge">${r.category}</span>
           <h4>${r.title}</h4>
@@ -512,7 +585,7 @@ async function build() {
       </a>
     `).join('');
 
-    const ogImage = post.cover ? `<meta property="og:image" content="${SITE_URL}/${post.cover}">` : '';
+    const ogImage = post.cover ? `<meta property="og:image" content="${fullUrl('/' + post.cover)}">` : '';
     const jsonLd = `<script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -537,12 +610,12 @@ async function build() {
 
     const html = `<!DOCTYPE html>
 <html lang="es">
-${renderHead(post.title, post.summary || post.title, `/post/${post.id}/`, 'article', extraMeta)}
+${renderHead(post.title, post.summary || post.title, '/' + 'post/' + post.id + '/', 'article', extraMeta)}
 <body>
   ${renderHeader()}
   <main class="container post-page">
     <article class="post-full">
-      ${post.cover ? `<img src="${BASE_URL}/${post.cover}" alt="${post.title}" class="post-cover" loading="eager">` : ''}
+      ${post.cover ? `<img src="${url('/' + post.cover)}" alt="${post.title}" class="post-cover" loading="eager">` : ''}
       <header class="post-header">
         <span class="category-badge">${post.category}</span>
         <h1>${post.title}</h1>
@@ -567,8 +640,8 @@ ${renderHead(post.title, post.summary || post.title, `/post/${post.id}/`, 'artic
           <div class="related-grid">${relatedHtml}</div>
         </section>` : ''}
         <nav class="post-nav" aria-label="Navegación entre artículos">
-          ${prev ? `<a href="${BASE_URL}/post/${prev.id}/" class="prev">← ${prev.title}</a>` : '<span></span>'}
-          ${next ? `<a href="${BASE_URL}/post/${next.id}/" class="next">${next.title} →</a>` : ''}
+          ${prev ? `<a href="${url(`/post/${prev.id}/`)}" class="prev">← ${prev.title}</a>` : '<span></span>'}
+          ${next ? `<a href="${url(`/post/${next.id}/`)}" class="next">${next.title} →</a>` : ''}
         </nav>
       </footer>
     </article>
@@ -581,30 +654,30 @@ ${renderHead(post.title, post.summary || post.title, `/post/${post.id}/`, 'artic
     console.log(`  ✅ /post/${post.id}/`);
   });
 
-  // Generate index page
+  // ── Index page ──
   const cardsHtml = posts.map(p => {
     const tagsHtml = p.tags.slice(0, 3).map(t => `<span class="tag">${t}</span>`).join('');
     const timeEst = p.readingTime === 1 ? '1 min' : `${p.readingTime} min`;
     return `
     <article class="post-card">
-      ${p.cover ? `<img src="${BASE_URL}/${p.cover}" alt="${p.title}" class="card-cover" loading="lazy">` : ''}
+      ${p.cover ? `<img src="${url('/' + p.cover)}" alt="${p.title}" class="card-cover" loading="lazy">` : ''}
       <div class="card-body">
         <span class="category-badge">${p.category}</span>
         <time datetime="${p.date}">${formatDate(p.date)} · ${p.time}</time>
-        <h2><a href="${BASE_URL}/post/${p.id}/">${p.title}</a></h2>
+        <h2><a href="${url(`/post/${p.id}/`)}">${p.title}</a></h2>
         <p class="card-summary">${p.summary || ''}</p>
         <div class="card-footer">
           <span class="card-author">${p.author}</span>
           <span class="card-reading">${timeEst}</span>
           <div class="tags">${tagsHtml}</div>
         </div>
-        <a href="${BASE_URL}/post/${p.id}/" class="read-more">Leer más →</a>
+        <a href="${url(`/post/${p.id}/`)}" class="read-more">Leer más →</a>
       </div>
     </article>`;
   }).join('\n');
 
   const catsBar = categories.map(c =>
-    `<a href="${BASE_URL}/category/${c.toLowerCase()}/" class="category-pill">${c}</a>`
+    `<a href="${url(`/category/${c.toLowerCase()}/`)}" class="category-pill">${c}</a>`
   ).join('');
 
   const indexHtml = `<!DOCTYPE html>
@@ -627,27 +700,27 @@ ${renderHead(SITE_NAME, SITE_DESC, '/', 'website')}
   fs.writeFileSync(path.join(PUBLIC_DIR, 'index.html'), indexHtml);
   console.log('  ✅ index.html');
 
-  // Generate category pages
+  // ── Category pages ──
   categories.forEach(cat => {
     const catPosts = posts.filter(p => p.category === cat);
     const catCards = catPosts.map(p => {
       const timeEst = p.readingTime === 1 ? '1 min' : `${p.readingTime} min`;
       return `
       <article class="post-card">
-        ${p.cover ? `<img src="${BASE_URL}/${p.cover}" class="card-cover" loading="lazy">` : ''}
+        ${p.cover ? `<img src="${url('/' + p.cover)}" class="card-cover" loading="lazy">` : ''}
         <div class="card-body">
           <span class="category-badge">${p.category}</span>
           <time datetime="${p.date}">${formatDate(p.date)} · ${p.time}</time>
-          <h2><a href="${BASE_URL}/post/${p.id}/">${p.title}</a></h2>
+          <h2><a href="${url(`/post/${p.id}/`)}">${p.title}</a></h2>
           <p class="card-summary">${p.summary || ''}</p>
-          <a href="${BASE_URL}/post/${p.id}/" class="read-more">Leer más →</a>
+          <a href="${url(`/post/${p.id}/`)}" class="read-more">Leer más →</a>
         </div>
       </article>`;
     }).join('\n');
 
     const catHtml = `<!DOCTYPE html>
 <html lang="es">
-${renderHead(`${cat} - ${SITE_NAME}`, `Artículos sobre ${cat}`, `/category/${cat.toLowerCase()}/`, 'website')}
+${renderHead(`${cat} - ${SITE_NAME}`, `Artículos sobre ${cat}`, '/category/' + cat.toLowerCase() + '/', 'website')}
 <body>
   ${renderHeader()}
   <main class="container">
@@ -667,7 +740,7 @@ ${renderHead(`${cat} - ${SITE_NAME}`, `Artículos sobre ${cat}`, `/category/${ca
     console.log(`  ✅ /category/${cat.toLowerCase()}/`);
   });
 
-  // Generate search page
+  // ── Search page ──
   const searchHtml = `<!DOCTYPE html>
 <html lang="es">
 ${renderHead('Buscar - ' + SITE_NAME, 'Buscar artículos', '/search.html', 'website')}
@@ -684,14 +757,14 @@ ${renderHead('Buscar - ' + SITE_NAME, 'Buscar artículos', '/search.html', 'webs
     </div>
   </main>
   ${renderFooter()}
-  <script src="${BASE_URL}/assets/js/search.js"></script>
+  <script src="${url('/assets/js/search.js')}"></script>
 </body>
 </html>`;
 
   fs.writeFileSync(path.join(PUBLIC_DIR, 'search.html'), searchHtml);
   console.log('  ✅ search.html');
 
-  // Generate 404 page
+  // ── 404 page ──
   const notFoundHtml = `<!DOCTYPE html>
 <html lang="es">
 ${renderHead('404 - ' + SITE_NAME, 'Página no encontrada', '/404.html', 'website')}
@@ -699,15 +772,15 @@ ${renderHead('404 - ' + SITE_NAME, 'Página no encontrada', '/404.html', 'websit
   <main class="container error-page">
     <h1>404</h1>
     <p>Página no encontrada</p>
-    <a href="${BASE_URL}/" class="btn-primary">Volver al inicio</a>
+    <a href="${url('/')}" class="btn-primary">Volver al inicio</a>
   </main>
-  <script src="${BASE_URL}/assets/js/config.js"></script>
+  <script src="${url('/assets/js/config.js')}"></script>
 </body>
 </html>`;
   fs.writeFileSync(path.join(PUBLIC_DIR, '404.html'), notFoundHtml);
   console.log('  ✅ 404.html');
 
-  // Generate offline page
+  // ── Offline page ──
   const offlineHtml = `<!DOCTYPE html>
 <html lang="es">
 ${renderHead('Sin conexión - ' + SITE_NAME, 'Sin conexión a Internet', '/offline.html', 'website')}
@@ -717,26 +790,26 @@ ${renderHead('Sin conexión - ' + SITE_NAME, 'Sin conexión a Internet', '/offli
     <p>No hay conexión a Internet. Los artículos guardados están disponibles sin conexión.</p>
     <button class="btn-primary" onclick="location.reload()">Reintentar</button>
   </main>
-  <script src="${BASE_URL}/assets/js/config.js"></script>
+  <script src="${url('/assets/js/config.js')}"></script>
 </body>
 </html>`;
   fs.writeFileSync(path.join(PUBLIC_DIR, 'offline.html'), offlineHtml);
   console.log('  ✅ offline.html');
 
-  // Generate manifest.json
+  // ── manifest.json ──
   writeManifest();
   console.log('  ✅ manifest.json');
 
-  // Generate Service Worker
+  // ── Service Worker ──
   writeServiceWorker(posts);
   console.log('  ✅ sw.js');
 
-  // Generate RSS
+  // ── RSS ──
   const rssItems = posts.map(p => `
     <item>
       <title>${escapeHtml(p.title)}</title>
-      <link>${SITE_URL}/post/${p.id}/</link>
-      <guid isPermaLink="true">${SITE_URL}/post/${p.id}/</guid>
+      <link>${fullUrl('/post/' + p.id + '/')}</link>
+      <guid isPermaLink="true">${fullUrl('/post/' + p.id + '/')}</guid>
       <pubDate>${new Date(p.date + 'T' + p.time).toUTCString()}</pubDate>
       <description>${escapeHtml(p.summary || p.title)}</description>
       <category>${escapeHtml(p.category)}</category>
@@ -747,42 +820,42 @@ ${renderHead('Sin conexión - ' + SITE_NAME, 'Sin conexión a Internet', '/offli
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>${SITE_NAME}</title>
-    <link>${SITE_URL}/</link>
+    <link>${fullUrl('/')}</link>
     <description>${SITE_DESC}</description>
     <language>es</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
-    <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml"/>
+    <atom:link href="${fullUrl('/rss.xml')}" rel="self" type="application/rss+xml"/>
     ${rssItems}
   </channel>
 </rss>`;
   fs.writeFileSync(path.join(PUBLIC_DIR, 'rss.xml'), rss);
   console.log('  ✅ rss.xml');
 
-  // Generate sitemap
+  // ── Sitemap ──
   const sitemapUrls = [
     { loc: '/', priority: '1.0' },
     { loc: '/search.html', priority: '0.6' },
-    ...categories.map(c => ({ loc: `/category/${c.toLowerCase()}/`, priority: '0.7' })),
-    ...posts.map(p => ({ loc: `/post/${p.id}/`, priority: '0.9' }))
+    ...categories.map(c => ({ loc: '/category/' + c.toLowerCase() + '/', priority: '0.7' })),
+    ...posts.map(p => ({ loc: '/post/' + p.id + '/', priority: '0.9' }))
   ];
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   ${sitemapUrls.map(u => `
   <url>
-    <loc>${SITE_URL}${u.loc}</loc>
+    <loc>${fullUrl(u.loc)}</loc>
     <priority>${u.priority}</priority>
   </url>`).join('')}
 </urlset>`;
   fs.writeFileSync(path.join(PUBLIC_DIR, 'sitemap.xml'), sitemap);
   console.log('  ✅ sitemap.xml');
 
-  // Generate robots.txt
+  // ── robots.txt ──
   fs.writeFileSync(path.join(PUBLIC_DIR, 'robots.txt'),
-    `User-agent: *\nAllow: /\nSitemap: ${SITE_URL}/sitemap.xml`);
+    `User-agent: *\nAllow: /\nSitemap: ${fullUrl('/sitemap.xml')}`);
   console.log('  ✅ robots.txt');
 
-  // Generate version.json
+  // ── version.json ──
   fs.writeJsonSync(path.join(PUBLIC_DIR, 'version.json'), {
     version: Date.now().toString(36),
     updated: new Date().toISOString(),
@@ -790,15 +863,15 @@ ${renderHead('Sin conexión - ' + SITE_NAME, 'Sin conexión a Internet', '/offli
   });
   console.log('  ✅ version.json');
 
-  // Generate CNAME if custom domain
+  // ── CNAME (custom domain) ──
   if (process.env.CNAME) {
     fs.writeFileSync(path.join(PUBLIC_DIR, 'CNAME'), process.env.CNAME.trim());
     console.log(`  ✅ CNAME (${process.env.CNAME})`);
   }
 
-  // ==========================================
-  // VALIDATION: Verify no 404s
-  // ==========================================
+  // ══════════════════════════════════════════
+  //  VALIDATION 1: Asset existence
+  // ══════════════════════════════════════════
   console.log('\n══════════════════════════════════════════');
   console.log('  Validando assets...\n');
 
@@ -830,14 +903,15 @@ ${renderHead('Sin conexión - ' + SITE_NAME, 'Sin conexión a Internet', '/offli
   checkFile(path.join(PUBLIC_DIR, 'data', 'search.json'), 'data/search.json');
 
   posts.forEach(p => {
-    checkFile(path.join(PUBLIC_DIR, 'post', p.id, 'index.html'), `post/${p.id}/index.html`);
+    checkFile(path.join(PUBLIC_DIR, 'post', p.id, 'index.html'), 'post/' + p.id + '/index.html');
     if (p.cover) {
-      checkFile(path.join(PUBLIC_DIR, p.cover), `cover: ${p.cover}`);
+      checkFile(path.join(PUBLIC_DIR, p.cover), 'cover: ' + p.cover);
     }
   });
 
   categories.forEach(c => {
-    checkFile(path.join(PUBLIC_DIR, 'category', c.toLowerCase(), 'index.html'), `category/${c}/index.html`);
+    const dir = path.join(PUBLIC_DIR, 'category', c.toLowerCase(), 'index.html');
+    checkFile(dir, `category/${c}/index.html`);
   });
 
   if (errors > 0) {
@@ -847,9 +921,23 @@ ${renderHead('Sin conexión - ' + SITE_NAME, 'Sin conexión a Internet', '/offli
 
   console.log(`  ✅ Todos los assets verificados (0 errores)`);
 
-  // ==========================================
-  // Summary
-  // ==========================================
+  // ══════════════════════════════════════════
+  //  VALIDATION 2: HTML paths resolution
+  // ══════════════════════════════════════════
+  console.log('\n  Validando enlaces en HTML...\n');
+
+  const htmlErrors = validateHtmlPaths();
+
+  if (htmlErrors > 0) {
+    console.error(`\n❌ ${htmlErrors} enlace(s) roto(s) en HTML. Build fallido.`);
+    process.exit(1);
+  }
+
+  console.log(`  ✅ Todos los enlaces verificados (0 errores)`);
+
+  // ══════════════════════════════════════════
+  //  Summary
+  // ══════════════════════════════════════════
   console.log('\n══════════════════════════════════════════');
   console.log(`  Build exitoso`);
   console.log(`  ${posts.length} posts · ${categories.length} categorías`);

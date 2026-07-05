@@ -1,18 +1,14 @@
-name: Deploy Manual
+name: Deploy Manual (custom config)
 
 on:
   workflow_dispatch:
     inputs:
-      BASE_URL:
-        description: 'Base URL path'
-        required: false
-        default: '/blog'
       SITE_URL:
-        description: 'Site URL'
-        required: false
-        default: 'https://fershouno.github.io/blog'
+        description: 'URL completa del sitio (ej: https://blog.fershouno.me)'
+        required: true
+        default: 'https://fershunoo.github.io/blog'
       CNAME:
-        description: 'Custom domain (opcional)'
+        description: 'Dominio personalizado (opcional, ej: blog.fershouno.me)'
         required: false
         default: ''
 
@@ -38,11 +34,14 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+
       - run: npm run build
         env:
-          BASE_URL: ${{ github.event.inputs.BASE_URL }}
           SITE_URL: ${{ github.event.inputs.SITE_URL }}
+          SITE_NAME: Debian MicroNews
+          SITE_DESC: Noticias sobre Debian, GNU/Linux y Software Libre
           CNAME: ${{ github.event.inputs.CNAME }}
+
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v4
         with:
