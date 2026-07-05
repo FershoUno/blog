@@ -20,15 +20,17 @@ const RAW_SITE_URL = process.env.SITE_URL;
 let BASE_URL;
 let SITE_URL;
 
+const DEFAULT_SITE_URL = 'https://blog.fershouno.me';
+
 if (RAW_BASE_URL !== undefined) {
   BASE_URL = RAW_BASE_URL;
 } else if (RAW_SITE_URL) {
   BASE_URL = deriveBaseUrl(RAW_SITE_URL);
 } else {
-  BASE_URL = '/blog';
+  BASE_URL = deriveBaseUrl(DEFAULT_SITE_URL);
 }
 
-SITE_URL = RAW_SITE_URL || 'https://blog.fershouno.me/';
+SITE_URL = RAW_SITE_URL || DEFAULT_SITE_URL;
 
 // Normalize: ensure BASE_URL has no trailing slash
 if (BASE_URL.length > 1 && BASE_URL.endsWith('/')) BASE_URL = BASE_URL.slice(0, -1);

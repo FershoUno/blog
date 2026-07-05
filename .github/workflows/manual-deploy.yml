@@ -6,7 +6,7 @@ on:
       SITE_URL:
         description: 'URL completa del sitio (ej: https://blog.fershouno.me)'
         required: true
-        default: 'https://fershunoo.github.io/blog'
+        default: 'https://blog.fershouno.me'
       CNAME:
         description: 'Dominio personalizado (opcional, ej: blog.fershouno.me)'
         required: false

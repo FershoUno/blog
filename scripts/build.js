@@ -251,7 +251,7 @@ function writeServiceWorker(posts) {
   ];
 
   const dataPrefix = url('/data/');
-  const versionPrefix = url('/version.json');
+  const versionPath = url('/version.json');
   const offlineUrl = url('/offline.html');
 
   const sw = `
@@ -290,13 +290,16 @@ self.addEventListener('fetch', function (event) {
   var req = event.request;
   if (req.method !== 'GET') return;
 
-  var url = req.url;
+  var urlObj = new URL(req.url);
+  if (urlObj.origin !== self.location.origin) return;
 
-  if (url.indexOf('${dataPrefix}') !== -1 || url.indexOf('${versionPrefix}') !== -1) {
+  var path = urlObj.pathname;
+
+  if (path.startsWith('${dataPrefix}') || path === '${versionPath}') {
     event.respondWith(
       caches.open(CACHE_NAME).then(function (cache) {
         return fetch(req).then(function (res) {
-          cache.put(req, res.clone());
+          if (res.status === 200) cache.put(req, res.clone());
           return res;
         }).catch(function () {
           return caches.match(req);
@@ -306,22 +309,20 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  if (url.indexOf('${url('/')}') !== -1) {
-    event.respondWith(
-      caches.match(req).then(function (cached) {
-        var fetchP = fetch(req).then(function (res) {
-          if (res && res.status === 200) {
-            var copy = res.clone();
-            caches.open(CACHE_NAME).then(function (cache) { cache.put(req, copy); });
-          }
-          return res;
-        }).catch(function () {
-          return caches.match(OFFLINE_URL);
-        });
-        return cached || fetchP;
-      })
-    );
-  }
+  event.respondWith(
+    caches.match(req).then(function (cached) {
+      var fetchP = fetch(req).then(function (res) {
+        if (res && res.status === 200) {
+          var copy = res.clone();
+          caches.open(CACHE_NAME).then(function (cache) { cache.put(req, copy); });
+        }
+        return res;
+      }).catch(function () {
+        return caches.match(OFFLINE_URL);
+      });
+      return cached || fetchP;
+    })
+  );
 });
 
 self.addEventListener('message', function (event) {
