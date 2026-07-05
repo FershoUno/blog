@@ -1,0 +1,43 @@
+{
+  "name": "Debian MicroNews",
+  "short_name": "DBN MicroNews",
+  "description": "Noticias sobre Debian, GNU/Linux y Software Libre",
+  "start_url": "/blog/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "categories": ["news", "technology", "linux"],
+  "lang": "es",
+  "scope": "/blog/",
+  "icons": [
+    {
+      "src": "/blog/assets/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/blog/assets/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Últimos artículos",
+      "short_name": "Novedades",
+      "description": "Ver los artículos más recientes",
+      "url": "/blog/",
+      "icons": [{ "src": "/blog/assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Buscar",
+      "short_name": "Buscar",
+      "description": "Buscar artículos",
+      "url": "/blog/search.html",
+      "icons": [{ "src": "/blog/assets/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

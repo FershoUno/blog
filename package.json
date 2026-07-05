@@ -1,0 +1,20 @@
+{
+  "name": "debian-micronews",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plataforma de microblogging estática sobre Debian, GNU/Linux y Software Libre",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "generate:feed": "node scripts/generate-feed.js",
+    "generate:search": "node scripts/generate-search.js",
+    "generate:sitemap": "node scripts/generate-sitemap.js",
+    "generate:id": "node scripts/generate-post-id.js",
+    "optimize:images": "node scripts/optimize-images.js"
+  },
+  "dependencies": {
+    "fs-extra": "^11.2.0",
+    "highlight.js": "^11.9.0",
+    "marked": "^12.0.0",
+    "js-yaml": "^4.1.0"
+  }
+}

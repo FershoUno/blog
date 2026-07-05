@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1117"/>
+      <stop offset="100%" style="stop-color:#161b22"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <text x="600" y="220" font-family="Inter,sans-serif" font-size="80" font-weight="700" text-anchor="middle" fill="#58a6ff">Debian 14</text>
+  <text x="600" y="280" font-family="Inter,sans-serif" font-size="40" text-anchor="middle" fill="#8b949e">⎈ Freeze</text>
+  <rect x="400" y="320" width="400" height="4" rx="2" fill="#30363d"/>
+  <text x="600" y="380" font-family="Inter,sans-serif" font-size="24" text-anchor="middle" fill="#6e7681">Debian MicroNews</text>
+</svg>
